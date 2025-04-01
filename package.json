@@ -2,8 +2,9 @@
   "name": "googlebooks-app",
   "version": "1.0.0",
   "description": "",
-  "main": "server/server.js",
+  "main": "server/dist/server.js",
   "scripts": {
+    "prestart": "cd server && npm run build",
     "start": "node server/server.js",
     "server": "cd server && npm start",
     "dev": "concurrently \"cd server && npm run watch\" \"cd client && npm run dev\"",
