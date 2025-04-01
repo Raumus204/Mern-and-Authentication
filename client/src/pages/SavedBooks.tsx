@@ -1,37 +1,45 @@
 import { Container, Card, Button, Row, Col } from 'react-bootstrap';
+import { useMutation, useQuery } from '@apollo/client';
+import { DELETE_BOOK } from '../utils/mutations';
+import { QUERY_USER } from '../utils/queries';
 import Auth from '../utils/auth';
 import { removeBookId } from '../utils/localStorage';
-import { useQuery, useMutation } from '@apollo/client';
-import { GET_ME } from '../utils/queries';
-import { REMOVE_BOOK } from '../utils/mutations';
 import type { Book } from '../models/Book';
 
+interface QueryUserResponse {
+  me: {
+    username: string;
+    savedBooks: Book[];
+  };
+}
+
 const SavedBooks = () => {
-  const { loading, data } = useQuery(GET_ME);
-  const [removeBook] = useMutation(REMOVE_BOOK);
+  // Fetch the user's saved books using the QUERY_USER query
+  const { loading, data, refetch } = useQuery<QueryUserResponse>(QUERY_USER);
+  const userData = data?.me || { savedBooks: [], username: '' };
+  const savedBooks: Book[] = userData.savedBooks || [];
 
-  const userData = data?.me || {};
+  // Mutation to delete a book
+  const [removeBook] = useMutation(DELETE_BOOK);
 
+  // Handle deleting a book
   const handleDeleteBook = async (bookId: string) => {
-    const token = Auth.loggedIn() ? Auth.getToken() : null;
-
-    if (!token) {
-      return false;
-    }
+    if (!Auth.loggedIn()) return;
 
     try {
-      await removeBook({
-        variables: { bookId }
-      });
+      // Call the DELETE_BOOK mutation
+      await removeBook({ variables: { bookId } });
+      // Remove the book ID from local storage
       removeBookId(bookId);
+      // Refetch the user's saved books to update the UI
+      refetch();
     } catch (err) {
       console.error(err);
     }
   };
 
-  if (loading) {
-    return <h2>LOADING...</h2>;
-  }
+  // Show a loading message while the data is being fetched
+  if (loading) return <h2>LOADING...</h2>;
 
   return (
     <>
@@ -42,31 +50,20 @@ const SavedBooks = () => {
       </div>
       <Container>
         <h2 className='pt-5'>
-          {userData.savedBooks?.length
-            ? `Viewing ${userData.savedBooks.length} saved ${
-                userData.savedBooks.length === 1 ? 'book' : 'books'
-              }:`
+          {savedBooks.length
+            ? `Viewing ${savedBooks.length} saved ${savedBooks.length === 1 ? 'book' : 'books'}:`
             : 'You have no saved books!'}
         </h2>
         <Row>
-          {userData.savedBooks?.map((book: Book) => (
-            <Col md='4' key={book.bookId}>
+          {savedBooks.map(({ bookId, image, title, authors, description }) => (
+            <Col key={bookId} md='4'>
               <Card border='dark'>
-                {book.image && (
-                  <Card.Img
-                    src={book.image}
-                    alt={`The cover for ${book.title}`}
-                    variant='top'
-                  />
-                )}
+                {image && <Card.Img src={image} alt={`The cover for ${title}`} variant='top' />}
                 <Card.Body>
-                  <Card.Title>{book.title}</Card.Title>
-                  <p className='small'>Authors: {book.authors}</p>
-                  <Card.Text>{book.description}</Card.Text>
-                  <Button
-                    className='btn-block btn-danger'
-                    onClick={() => handleDeleteBook(book.bookId)}
-                  >
+                  <Card.Title>{title}</Card.Title>
+                  <p className='small'>Authors: {authors}</p>
+                  <Card.Text>{description}</Card.Text>
+                  <Button className='btn-block btn-danger' onClick={() => handleDeleteBook(bookId)}>
                     Delete this Book!
                   </Button>
                 </Card.Body>

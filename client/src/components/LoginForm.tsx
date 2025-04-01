@@ -1,4 +1,3 @@
-// see SignupForm.js for comments
 import { useState } from 'react';
 import type { ChangeEvent, FormEvent } from 'react';
 import { Form, Button, Alert } from 'react-bootstrap';
@@ -7,15 +6,13 @@ import { LOGIN_USER } from '../utils/mutations';
 import Auth from '../utils/auth';
 import type { User } from '../models/User';
 
+
 const LoginForm = ({}: { handleModalClose: () => void }) => {
+  const [login] = useMutation(LOGIN_USER);
   const [userFormData, setUserFormData] = useState<User>({ username: '', email: '', password: '', savedBooks: [] });
   const [validated] = useState(false);
   const [showAlert, setShowAlert] = useState(false);
 
-
-  const [loginUser, { error }] = useMutation(LOGIN_USER);
-  console.log('error', error);
-  
   const handleInputChange = (event: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = event.target;
     setUserFormData({ ...userFormData, [name]: value });
@@ -24,6 +21,7 @@ const LoginForm = ({}: { handleModalClose: () => void }) => {
   const handleFormSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
+ 
     const form = event.currentTarget;
     if (form.checkValidity() === false) {
       event.preventDefault();
@@ -31,15 +29,11 @@ const LoginForm = ({}: { handleModalClose: () => void }) => {
     }
 
     try {
-      const { data } = await loginUser({
-          variables: { 
-            email: userFormData.email,
-            password: userFormData.password
-          }
-        });
+      const { data } = await login({
+        variables: { ...userFormData},
+      });
 
-        Auth.login(data.login.token);
-
+      Auth.login(data.login.token);
     } catch (err) {
       console.error(err);
       setShowAlert(true);
