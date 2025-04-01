@@ -1,23 +1,37 @@
-import express from 'express';
-const router = express.Router();
-import {
-  createUser,
-  getSingleUser,
-  saveBook,
-  deleteBook,
-  login,
-} from '../../controllers/user-controller.js';
+import { Request, Response, NextFunction } from 'express';
+import jwt from 'jsonwebtoken';
 
-// import middleware
-import { authenticateToken } from '../../services/auth.js';
+interface AuthRequest extends Request {
+  user: {
+    _id: string;
+    username: string;
+    email: string;
+  };
+}
 
-// put authMiddleware anywhere we need to send a token for verification of user
-router.route('/').post(createUser).put(authenticateToken, saveBook);
+export const authenticateRestRoute = (req: AuthRequest, res: Response, next: NextFunction) => {
+  let token = req.body.token || req.query.token || req.headers.authorization;
 
-router.route('/login').post(login);
+  if (req.headers.authorization) {
+    token = token.split(' ').pop()?.trim();
+  }
 
-router.route('/me').get(authenticateToken, getSingleUser);
+  if (!token) {
+    return res.status(401).json({ message: 'No token provided' });
+  }
 
-router.route('/books/:bookId').delete(authenticateToken, deleteBook);
+  try {
+    const user = jwt.verify(token, process.env.JWT_SECRET_KEY || '') as {
+      _id: string;
+      username: string;
+      email: string;
+    };
+    req.user = user;
+    next();
+  } catch (err) {
+    return res.status(401).json({ message: 'Invalid token' });
+  }
+  return;
+};
 
-export default router;
+export const userRoutes = (_app: any) => {};

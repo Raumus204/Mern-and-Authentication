@@ -1,8 +1,8 @@
 export interface Book {
-  authors: string[],
-  description: string;
-  bookId: string;
-  image: string;
-  link: string;
-  title: string;
+  authors: [String],
+  description: String;
+  bookId: String;
+  image: String;
+  link: String;
+  title: String;
 }

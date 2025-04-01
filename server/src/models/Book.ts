@@ -3,7 +3,7 @@ import { Schema, type Document } from 'mongoose';
 export interface BookDocument extends Document {
   bookId: string;
   title: string;
-  authors: string[];
+  authors: [string];
   description: string;
   image: string;
   link: string;
